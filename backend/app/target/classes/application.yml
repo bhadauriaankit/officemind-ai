@@ -78,6 +78,12 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST}
       password: ${SPRING_REDIS_PASSWORD}
+  spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://keycloak:8081/realms/officemind
 
 officemind:
   storage:
