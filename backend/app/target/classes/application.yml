@@ -43,6 +43,7 @@ logging:
   level:
     root: INFO
     com.officemind: DEBUG
+    org.springframework.security: DEBUG
 
 ---
 spring:
@@ -83,7 +84,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://keycloak:8081/realms/officemind
+          issuer-uri: http://keycloak:8080/realms/officemind
 
 officemind:
   storage:
