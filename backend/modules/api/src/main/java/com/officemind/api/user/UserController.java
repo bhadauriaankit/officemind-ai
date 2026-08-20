@@ -8,6 +8,7 @@ import com.officemind.domain.shared.EntityId;
 import com.officemind.domain.user.RoleName;
 import com.officemind.domain.user.User;
 import com.officemind.infrastructure.security.KeycloakJwtAuthenticationConverter;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -46,13 +47,13 @@ public class UserController {
         return UserResponse.from(user);
     }
 
+     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public PageResponse<UserResponse> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(listUsersUseCase.execute(page, size), UserResponse::from);
     }
-
     private IdentityClaims toIdentityClaims(Jwt jwt) {
         Set<RoleName> roles = KeycloakJwtAuthenticationConverter.extractRealmRoles(jwt).stream()
                 .map(this::toRoleNameSafely)
