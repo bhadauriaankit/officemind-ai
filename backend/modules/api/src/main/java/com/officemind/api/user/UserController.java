@@ -9,6 +9,9 @@ import com.officemind.domain.user.RoleName;
 import com.officemind.domain.user.User;
 import com.officemind.infrastructure.security.KeycloakJwtAuthenticationConverter;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.officemind.application.user.SetUserStatusUseCase;
+import com.officemind.application.user.UpdateUserRolesUseCase;
+import jakarta.validation.Valid;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
@@ -24,15 +27,20 @@ public class UserController {
     private final ProvisionUserOnLoginUseCase provisionUserOnLoginUseCase;
     private final GetUserUseCase getUserUseCase;
     private final ListUsersUseCase listUsersUseCase;
+    private final UpdateUserRolesUseCase updateUserRolesUseCase;
+    private final SetUserStatusUseCase setUserStatusUseCase;
 
     public UserController(ProvisionUserOnLoginUseCase provisionUserOnLoginUseCase,
                            GetUserUseCase getUserUseCase,
-                           ListUsersUseCase listUsersUseCase) {
+                           ListUsersUseCase listUsersUseCase,
+                           UpdateUserRolesUseCase updateUserRolesUseCase,
+                           SetUserStatusUseCase setUserStatusUseCase) {
         this.provisionUserOnLoginUseCase = provisionUserOnLoginUseCase;
         this.getUserUseCase = getUserUseCase;
         this.listUsersUseCase = listUsersUseCase;
+        this.updateUserRolesUseCase = updateUserRolesUseCase;
+        this.setUserStatusUseCase = setUserStatusUseCase;
     }
-
     @GetMapping("/me")
     public UserResponse me(JwtAuthenticationToken authentication) {
         Jwt jwt = authentication.getToken();
@@ -53,6 +61,27 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return PageResponse.from(listUsersUseCase.execute(page, size), UserResponse::from);
+    }
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/roles")
+    public UserResponse updateRoles(@PathVariable UUID id, @Valid @RequestBody UpdateRolesRequest request) {
+        User user = updateUserRolesUseCase.execute(EntityId.of(id), request.roles());
+        return UserResponse.from(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/disable")
+    public UserResponse disable(@PathVariable UUID id) {
+        User user = setUserStatusUseCase.disable(EntityId.of(id));
+        return UserResponse.from(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{id}/reactivate")
+    public UserResponse reactivate(@PathVariable UUID id) {
+        User user = setUserStatusUseCase.reactivate(EntityId.of(id));
+     
+   return UserResponse.from(user);
     }
     private IdentityClaims toIdentityClaims(Jwt jwt) {
         Set<RoleName> roles = KeycloakJwtAuthenticationConverter.extractRealmRoles(jwt).stream()
