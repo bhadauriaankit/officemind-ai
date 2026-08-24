@@ -67,6 +67,7 @@ officemind:
     secret-key: ${MINIO_ROOT_PASSWORD}
 
 ---
+---
 spring:
   config:
     activate:
@@ -79,15 +80,13 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST}
       password: ${SPRING_REDIS_PASSWORD}
-  spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://keycloak:8080/realms/officemind
 
 officemind:
   storage:
     endpoint: ${MINIO_ENDPOINT}
     access-key: ${MINIO_ACCESS_KEY}
     secret-key: ${MINIO_SECRET_KEY}
+  keycloak:
+    jwk-set-uri: http://keycloak:8080/realms/officemind/protocol/openid-connect/certs
+    internal-issuer: http://keycloak:8080/realms/officemind
+    public-issuer: http://localhost:8081/realms/officemind  
