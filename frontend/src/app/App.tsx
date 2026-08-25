@@ -4,6 +4,7 @@ import { AuthPanel } from "@/features/system/AuthPanel";
 import { AdminLayout } from "@/features/admin/AdminLayout";
 import { AdminDashboard } from "@/features/admin/AdminDashboard";
 import { AdminUsers } from "@/features/admin/AdminUsers";
+import { AdminDepartments } from "@/features/admin/AdminDepartments";
 import { RequireAdmin } from "@/shared/auth/RequireAdmin";
 
 function Home() {
@@ -39,6 +40,7 @@ export function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="departments" element={<AdminDepartments />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -4,6 +4,7 @@ import { useAuth } from "react-oidc-context";
 const navItems = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/users", label: "Users" },
+  { to: "/admin/departments", label: "Departments" },
 ];
 
 export function AdminLayout() {
