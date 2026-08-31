@@ -13,6 +13,7 @@ volumes:
   zookeeper_data:
   zookeeper_log:
   keycloak_data:
+  ollama_data:
 
 services:
 
@@ -139,6 +140,25 @@ services:
       - qdrant_data:/qdrant/storage
     networks:
       - officemind-net
+  # ---------------------------------------------------------------------
+  # Ollama - self-hosted LLM runtime (Phase 5: AI Engine)
+  # ---------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:0.3.12
+    container_name: officemind-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - officemind-net
 # ---------------------------------------------------------------------
   # Keycloak - identity provider (auth, JWT issuance, RBAC roles)
   # ---------------------------------------------------------------------
@@ -185,6 +205,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_started
+      ollama:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-officemind}

@@ -50,6 +50,7 @@ spring:
   config:
     activate:
       on-profile: local
+
   datasource:
     url: jdbc:postgresql://localhost:5432/officemind
     username: officemind_app
@@ -72,6 +73,11 @@ spring:
   config:
     activate:
       on-profile: docker
+  ai:
+    ollama:
+      base-url: http://ollama:11434
+      chat:
+        model: llama3.2:1b
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
