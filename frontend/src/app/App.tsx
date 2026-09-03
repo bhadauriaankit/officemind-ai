@@ -7,6 +7,7 @@ import { AdminUsers } from "@/features/admin/AdminUsers";
 import { AdminDepartments } from "@/features/admin/AdminDepartments";
 import { AdminDocuments } from "@/features/admin/AdminDocuments";
 import { RequireAdmin } from "@/shared/auth/RequireAdmin";
+import { ChatPage } from "@/features/chat/ChatPage";
 
 function Home() {
   return (
@@ -20,6 +21,9 @@ function Home() {
         <PlatformHealthPanel />
         <Link to="/admin" className="block text-sm font-medium text-slate-600 hover:text-slate-900">
           Go to Admin Portal →
+        </Link>	
+        <Link to="/chat" className="block text-sm font-medium text-slate-600 hover:text-slate-900">
+          Go to Chat →
         </Link>
       </main>
     </div>
@@ -31,6 +35,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+	      <Route path="/chat" element={<ChatPage />} />
         <Route
           path="/admin"
           element={
