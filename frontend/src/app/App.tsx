@@ -6,6 +6,7 @@ import { AdminDashboard } from "@/features/admin/AdminDashboard";
 import { AdminUsers } from "@/features/admin/AdminUsers";
 import { AdminDepartments } from "@/features/admin/AdminDepartments";
 import { AdminDocuments } from "@/features/admin/AdminDocuments";
+import { AdminAiSettings } from "@/features/admin/AdminAiSettings";
 import { RequireAdmin } from "@/shared/auth/RequireAdmin";
 import { ChatPage } from "@/features/chat/ChatPage";
 
@@ -48,6 +49,7 @@ export function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="departments" element={<AdminDepartments />} />
           <Route path="documents" element={<AdminDocuments />} />
+          <Route path="ai-settings" element={<AdminAiSettings />} />
         </Route>
       </Routes>
     </BrowserRouter>
