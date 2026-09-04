@@ -1,3 +1,4 @@
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
 import { httpClient } from "@/shared/api/httpClient";
@@ -61,6 +62,24 @@ export function useConversation(id: string | null) {
   });
 }
 
+// Extracts a human-readable message from an Axios error, falling back to
+// a generic message if the backend didn't send a parseable body.
+function extractErrorMessage(err: unknown): string {
+  const anyErr = err as any;
+  const status = anyErr?.response?.status;
+  const backendMessage = anyErr?.response?.data?.message;
+  if (status === 401) {
+    return "Your session expired. Please refresh the page and sign in again.";
+  }
+  if (backendMessage) {
+    return backendMessage;
+  }
+  if (anyErr?.message === "Network Error") {
+    return "Couldn't reach the server. Check that the backend is running.";
+  }
+  return "Something went wrong sending your message. Please try again.";
+}
+
 export function useStartConversation() {
   const auth = useAuth();
   const token = auth.user?.access_token;
@@ -77,6 +96,9 @@ export function useStartConversation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+    onError: (err) => {
+      console.error("startConversation failed:", err);
     },
   });
 }
@@ -99,5 +121,10 @@ export function useSendMessage() {
       queryClient.setQueryData(["conversation", data.id, token], data);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
+    onError: (err) => {
+      console.error("sendMessage failed:", err);
+    },
   });
 }
+
+export { extractErrorMessage };

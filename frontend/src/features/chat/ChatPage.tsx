@@ -1,9 +1,11 @@
+
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   useConversationList,
   useConversation,
   useStartConversation,
   useSendMessage,
+  extractErrorMessage,
   ChatMessage,
 } from "./useConversation";
 
@@ -18,10 +20,20 @@ export function ChatPage() {
   const sendMessage = useSendMessage();
 
   const isSending = startConversation.isPending || sendMessage.isPending;
+  const activeError = startConversation.error || sendMessage.error;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConversation?.messages.length]);
+
+  // Clear a stale error as soon as the user starts typing again.
+  useEffect(() => {
+    if (input && (startConversation.isError || sendMessage.isError)) {
+      startConversation.reset();
+      sendMessage.reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -91,6 +103,24 @@ export function ChatPage() {
             <div ref={bottomRef} />
           </div>
         </div>
+
+        {activeError && (
+          <div className="mx-auto mb-2 w-full max-w-2xl px-6">
+            <div className="flex items-center justify-between rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+              <span>{extractErrorMessage(activeError)}</span>
+              <button
+                onClick={() => {
+                  startConversation.reset();
+                  sendMessage.reset();
+                }}
+                className="ml-4 text-red-500 hover:text-red-700"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="border-t border-slate-200 bg-white p-4">
           <div className="mx-auto flex max-w-2xl gap-2">
