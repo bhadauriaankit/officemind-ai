@@ -108,10 +108,26 @@ public class QdrantVectorStoreAdapter implements VectorStorePort {
             List<ScoredPoint> results = qdrantClient.searchAsync(request, TIMEOUT)
                     .get(TIMEOUT.getSeconds(), TimeUnit.SECONDS);
             return results.stream().map(this::toSearchHit).toList();
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        } catch (ExecutionException e) {
+            // Search now runs on every chat message (not just document
+            // workflows), so a collection that simply doesn't exist yet
+            // (no document has ever been successfully indexed) must
+            // degrade to "no results" rather than break chat entirely.
+            if (isCollectionNotFound(e)) {
+                log.debug("Qdrant collection '{}' does not exist yet; returning no search results", collectionName);
+                return List.of();
+            }
+            throw new RuntimeException("Failed to search Qdrant collection " + collectionName, e);
+        } catch (InterruptedException | TimeoutException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Failed to search Qdrant collection " + collectionName, e);
         }
+    }
+
+    private boolean isCollectionNotFound(ExecutionException e) {
+        Throwable cause = e.getCause();
+        return cause instanceof io.grpc.StatusRuntimeException sre
+                && sre.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND;
     }
 
     private PointStruct toPointStruct(IndexedChunk chunk) {

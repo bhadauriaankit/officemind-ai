@@ -28,12 +28,19 @@ public class OllamaChatModelAdapter implements ChatModelPort {
     }
 
     @Override
-    public String generateReply(List<Message> conversationHistory) {
+    public String generateReply(List<Message> conversationHistory, String retrievedContext) {
         AiSettings settings = aiSettingsRepository.get();
 
         List<org.springframework.ai.chat.messages.Message> springAiMessages = new ArrayList<>();
         if (settings.getSystemPrompt() != null && !settings.getSystemPrompt().isBlank()) {
             springAiMessages.add(new SystemMessage(settings.getSystemPrompt()));
+        }
+        if (retrievedContext != null && !retrievedContext.isBlank()) {
+            springAiMessages.add(new SystemMessage(
+                    "The following excerpts from company documents may be relevant to the "
+                    + "user's question. Use them if helpful, and mention which document you "
+                    + "drew from. If they are not relevant, ignore them and answer normally.\n\n"
+                    + retrievedContext));
         }
         conversationHistory.stream().map(this::toSpringAiMessage).forEach(springAiMessages::add);
 

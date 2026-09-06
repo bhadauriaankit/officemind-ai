@@ -80,6 +80,17 @@
       <artifactId>client</artifactId>
       <version>1.9.1</version>
     </dependency>
+    <!-- io.qdrant:client depends on grpc-api transitively at a scope that
+         doesn't expose it for direct compilation here (needed for the
+         NOT_FOUND status-code check in QdrantVectorStoreAdapter). Pinned
+         to the version already resolved by the qdrant client (confirmed
+         via the runtime classpath: grpc-api-1.59.0.jar) to avoid any
+         version mismatch. -->
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-api</artifactId>
+      <version>1.59.0</version>
+    </dependency>
 
     <!-- Text extraction for RAG document indexing (Phase 6): auto-detects
          and parses PDF, DOCX, TXT, etc. into plain text -->
