@@ -1,0 +1,23 @@
+# Maven build output
+target/
+*.class
+
+# Node / frontend build output
+node_modules/
+dist/
+frontend/dist/
+
+# Environment secrets
+.env
+!.env.example
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Logs
+*.log

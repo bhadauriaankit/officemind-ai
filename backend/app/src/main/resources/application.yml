@@ -38,6 +38,8 @@ officemind:
   qdrant:
     host: ${QDRANT_HOST:localhost}
     port: ${QDRANT_PORT:6334}
+    collection-name: document_chunks
+    vector-size: 768
 
 logging:
   level:
@@ -78,6 +80,8 @@ spring:
       base-url: http://ollama:11434
       chat:
         model: llama3.2:1b
+      embedding:
+        model: nomic-embed-text
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
