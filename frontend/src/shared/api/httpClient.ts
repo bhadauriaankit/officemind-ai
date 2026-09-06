@@ -7,7 +7,13 @@ import axios from "axios";
  */
 export const httpClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api/v1",
-  timeout: 10_000,
+  // 10s was fine pre-Phase-6, but RAG-augmented chat responses (embed
+  // query -> Qdrant search -> LLM generation, all sequential) can
+  // legitimately take longer, especially on a cold model load. 90s
+  // headroom below the backend's own 120s Ollama read timeout so a
+  // genuine backend timeout still surfaces as a real error rather than
+  // the frontend giving up first and masking it.
+  timeout: 90_000,
   headers: {
     "Content-Type": "application/json",
   },
