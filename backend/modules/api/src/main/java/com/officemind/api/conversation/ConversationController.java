@@ -36,7 +36,10 @@ public class ConversationController {
     public ConversationResponse start(@Valid @RequestBody SendMessageRequest request,
                                        JwtAuthenticationToken authentication) {
         String internalUserId = resolveInternalUserId(authentication);
-        Conversation conversation = sendMessageUseCase.startConversation(internalUserId, request.message());
+        EntityId agentId = request.agentId() != null && !request.agentId().isBlank()
+                ? EntityId.of(UUID.fromString(request.agentId()))
+                : null;
+        Conversation conversation = sendMessageUseCase.startConversation(internalUserId, request.message(), agentId);
         return ConversationResponse.from(conversation);
     }
 

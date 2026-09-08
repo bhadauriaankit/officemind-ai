@@ -7,44 +7,53 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A chat session between one user and the assistant. Holds message history
  * in-memory as a simple list; large-scale summarization/pruning is a later
  * concern once conversations get long (Phase 10: Conversation Engine).
+ *
+ * agentId (Phase 7): which persona agent this conversation is using, if
+ * any. Chosen once at start and immutable after -- but the agent's
+ * *content* (its system prompt) is still resolved live on every message,
+ * same pattern as AiSettings, so editing an agent takes effect on
+ * existing conversations immediately.
  */
 public class Conversation extends AggregateRoot {
 
     private final EntityId id;
     private final String userId;
+    private final EntityId agentId;
     private String title;
     private final List<Message> messages;
     private final Instant createdAt;
     private Instant updatedAt;
 
-    private Conversation(EntityId id, String userId, String title, List<Message> messages,
+    private Conversation(EntityId id, String userId, EntityId agentId, String title, List<Message> messages,
                           Instant createdAt, Instant updatedAt) {
         this.id = Objects.requireNonNull(id);
         this.userId = Objects.requireNonNull(userId, "userId is required");
+        this.agentId = agentId;
         this.title = title;
         this.messages = new ArrayList<>(messages);
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
-    public static Conversation start(String userId, String firstUserMessage) {
+    public static Conversation start(String userId, String firstUserMessage, EntityId agentId) {
         Instant now = Instant.now();
         Conversation conversation = new Conversation(
-                EntityId.generate(), userId, deriveTitleFrom(firstUserMessage),
+                EntityId.generate(), userId, agentId, deriveTitleFrom(firstUserMessage),
                 new ArrayList<>(), now, now
         );
         conversation.appendMessage(Message.userMessage(firstUserMessage));
         return conversation;
     }
 
-    public static Conversation rehydrate(EntityId id, String userId, String title,
+    public static Conversation rehydrate(EntityId id, String userId, EntityId agentId, String title,
                                           List<Message> messages, Instant createdAt, Instant updatedAt) {
-        return new Conversation(id, userId, title, messages, createdAt, updatedAt);
+        return new Conversation(id, userId, agentId, title, messages, createdAt, updatedAt);
     }
 
     public void appendMessage(Message message) {
@@ -59,6 +68,7 @@ public class Conversation extends AggregateRoot {
 
     public EntityId getId() { return id; }
     public String getUserId() { return userId; }
+    public Optional<EntityId> getAgentId() { return Optional.ofNullable(agentId); }
     public String getTitle() { return title; }
     public List<Message> getMessages() { return List.copyOf(messages); }
     public Instant getCreatedAt() { return createdAt; }

@@ -17,6 +17,9 @@ public class ConversationJpaEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @Column(name = "agent_id")
+    private UUID agentId;
+
     private String title;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -24,16 +27,18 @@ public class ConversationJpaEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)	
+
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @OrderBy("sequenceNumber ASC")
     private List<MessageJpaEntity> messages = new ArrayList<>();
 
     protected ConversationJpaEntity() {
     }
 
-    public ConversationJpaEntity(UUID id, UUID userId, String title, Instant createdAt, Instant updatedAt) {
+    public ConversationJpaEntity(UUID id, UUID userId, UUID agentId, String title, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.userId = userId;
+        this.agentId = agentId;
         this.title = title;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -41,6 +46,7 @@ public class ConversationJpaEntity {
 
     public UUID getId() { return id; }
     public UUID getUserId() { return userId; }
+    public UUID getAgentId() { return agentId; }
     public String getTitle() { return title; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }

@@ -1,5 +1,4 @@
 package com.officemind.infrastructure.conversation;
-
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.conversation.Message;
 import com.officemind.domain.conversation.MessageRole;
@@ -23,9 +22,12 @@ final class ConversationMapper {
                 ))
                 .toList();
 
+        EntityId agentId = entity.getAgentId() != null ? EntityId.of(entity.getAgentId()) : null;
+
         return Conversation.rehydrate(
                 EntityId.of(entity.getId()),
                 entity.getUserId().toString(),
+                agentId,
                 entity.getTitle(),
                 messages,
                 entity.getCreatedAt(),
@@ -34,14 +36,18 @@ final class ConversationMapper {
     }
 
     static ConversationJpaEntity toJpa(Conversation conversation) {
+        UUID agentId = conversation.getAgentId().map(EntityId::value).orElse(null);
+
         ConversationJpaEntity entity = new ConversationJpaEntity(
                 conversation.getId().value(),
                 UUID.fromString(conversation.getUserId()),
+                agentId,
                 conversation.getTitle(),
                 conversation.getCreatedAt(),
                 conversation.getUpdatedAt()
         );
-	        List<MessageJpaEntity> messageEntities = new ArrayList<>();
+
+        List<MessageJpaEntity> messageEntities = new ArrayList<>();
         List<Message> messages = conversation.getMessages();
         for (int i = 0; i < messages.size(); i++) {
             Message m = messages.get(i);
@@ -56,7 +62,6 @@ final class ConversationMapper {
             messageEntities.add(messageEntity);
         }
         entity.setMessages(messageEntities);
-
 
         return entity;
     }

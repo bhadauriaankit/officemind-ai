@@ -28,13 +28,21 @@ public class OllamaChatModelAdapter implements ChatModelPort {
     }
 
     @Override
-    public String generateReply(List<Message> conversationHistory, String retrievedContext) {
+    public String generateReply(List<Message> conversationHistory, String retrievedContext, String systemPromptOverride) {
         AiSettings settings = aiSettingsRepository.get();
 
         List<org.springframework.ai.chat.messages.Message> springAiMessages = new ArrayList<>();
-        if (settings.getSystemPrompt() != null && !settings.getSystemPrompt().isBlank()) {
-            springAiMessages.add(new SystemMessage(settings.getSystemPrompt()));
+
+        // Phase 7: a selected persona Agent's prompt takes priority over
+        // the global AiSettings prompt; falls back to the global one for
+        // agent-less conversations (unchanged pre-Phase-7 behavior).
+        String effectiveSystemPrompt = (systemPromptOverride != null && !systemPromptOverride.isBlank())
+                ? systemPromptOverride
+                : settings.getSystemPrompt();
+        if (effectiveSystemPrompt != null && !effectiveSystemPrompt.isBlank()) {
+            springAiMessages.add(new SystemMessage(effectiveSystemPrompt));
         }
+
         if (retrievedContext != null && !retrievedContext.isBlank()) {
             springAiMessages.add(new SystemMessage(
                     "The following excerpts from company documents may be relevant to the "

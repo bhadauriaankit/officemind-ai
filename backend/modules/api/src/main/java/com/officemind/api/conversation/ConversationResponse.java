@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public record ConversationResponse(
         UUID id,
+        UUID agentId,
         String title,
         List<MessageResponse> messages,
         Instant createdAt,
@@ -16,6 +17,7 @@ public record ConversationResponse(
     public static ConversationResponse from(Conversation conversation) {
         return new ConversationResponse(
                 conversation.getId().value(),
+                conversation.getAgentId().map(id -> id.value()).orElse(null),
                 conversation.getTitle(),
                 conversation.getMessages().stream().map(MessageResponse::from).toList(),
                 conversation.getCreatedAt(),

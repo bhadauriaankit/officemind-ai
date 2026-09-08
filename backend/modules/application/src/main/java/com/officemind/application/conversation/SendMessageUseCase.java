@@ -1,7 +1,9 @@
 package com.officemind.application.conversation;
 
+import com.officemind.application.agent.AgentRepositoryPort;
 import com.officemind.application.documentchunk.SemanticSearchUseCase;
 import com.officemind.common.exception.ResourceNotFoundException;
+import com.officemind.domain.agent.Agent;
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.conversation.Message;
 import com.officemind.domain.shared.EntityId;
@@ -25,35 +27,53 @@ public class SendMessageUseCase {
     private final ConversationRepositoryPort conversationRepository;
     private final ChatModelPort chatModelPort;
     private final SemanticSearchUseCase semanticSearchUseCase;
+    private final AgentRepositoryPort agentRepository;
 
     public SendMessageUseCase(ConversationRepositoryPort conversationRepository,
                                ChatModelPort chatModelPort,
-                               SemanticSearchUseCase semanticSearchUseCase) {
+                               SemanticSearchUseCase semanticSearchUseCase,
+                               AgentRepositoryPort agentRepository) {
         this.conversationRepository = conversationRepository;
         this.chatModelPort = chatModelPort;
         this.semanticSearchUseCase = semanticSearchUseCase;
+        this.agentRepository = agentRepository;
     }
 
-    /** Starts a brand new conversation with the given first message. */
-    public Conversation startConversation(String userId, String userMessage) {
-        Conversation conversation = Conversation.start(userId, userMessage);
+    /** Starts a brand new conversation, optionally with a persona Agent. */
+    public Conversation startConversation(String userId, String userMessage, EntityId agentId) {
+        Conversation conversation = Conversation.start(userId, userMessage, agentId);
         String context = retrieveContext(userMessage);
-        String reply = chatModelPort.generateReply(conversation.getMessages(), context);
+        String systemPromptOverride = resolveAgentPrompt(agentId);
+        String reply = chatModelPort.generateReply(conversation.getMessages(), context, systemPromptOverride);
         conversation.appendMessage(Message.assistantMessage(reply));
         return conversationRepository.save(conversation);
     }
 
-    /** Continues an existing conversation. */
+    /** Continues an existing conversation. The agent (if any) was chosen at
+     *  start and is fixed for the conversation's lifetime, but its prompt
+     *  content is still re-resolved live -- same pattern as AiSettings. */
     public Conversation continueConversation(EntityId conversationId, String userMessage) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation", conversationId));
 
         conversation.appendMessage(Message.userMessage(userMessage));
         String context = retrieveContext(userMessage);
-        String reply = chatModelPort.generateReply(conversation.getMessages(), context);
+        String systemPromptOverride = conversation.getAgentId().map(this::resolveAgentPrompt).orElse(null);
+        String reply = chatModelPort.generateReply(conversation.getMessages(), context, systemPromptOverride);
         conversation.appendMessage(Message.assistantMessage(reply));
 
         return conversationRepository.save(conversation);
+    }
+
+    private String resolveAgentPrompt(EntityId agentId) {
+        if (agentId == null) {
+            return null;
+        }
+        // Agent may have been deleted since the conversation started
+        // (ON DELETE SET NULL only clears the FK on the conversations row
+        // itself, not any EntityId already loaded in memory here) --
+        // fall back to the global prompt rather than error.
+        return agentRepository.findById(agentId).map(Agent::getSystemPrompt).orElse(null);
     }
 
     private String retrieveContext(String userMessage) {
