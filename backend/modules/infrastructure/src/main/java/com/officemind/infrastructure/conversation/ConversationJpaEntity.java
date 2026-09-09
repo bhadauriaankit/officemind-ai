@@ -22,6 +22,10 @@ public class ConversationJpaEntity {
 
     private String title;
 
+    /** Phase 10: rolling summary of older pruned messages. Null until first summarization. */
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -35,11 +39,13 @@ public class ConversationJpaEntity {
     protected ConversationJpaEntity() {
     }
 
-    public ConversationJpaEntity(UUID id, UUID userId, UUID agentId, String title, Instant createdAt, Instant updatedAt) {
+    public ConversationJpaEntity(UUID id, UUID userId, UUID agentId, String title, String summary,
+                                  Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.userId = userId;
         this.agentId = agentId;
         this.title = title;
+        this.summary = summary;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -48,6 +54,7 @@ public class ConversationJpaEntity {
     public UUID getUserId() { return userId; }
     public UUID getAgentId() { return agentId; }
     public String getTitle() { return title; }
+    public String getSummary() { return summary; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public List<MessageJpaEntity> getMessages() { return messages; }

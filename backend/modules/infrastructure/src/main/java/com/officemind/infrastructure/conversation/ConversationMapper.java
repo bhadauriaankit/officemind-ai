@@ -1,4 +1,5 @@
 package com.officemind.infrastructure.conversation;
+
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.conversation.Message;
 import com.officemind.domain.conversation.MessageRole;
@@ -30,6 +31,7 @@ final class ConversationMapper {
                 agentId,
                 entity.getTitle(),
                 messages,
+                entity.getSummary(),   // Phase 10: map summary column
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
@@ -43,6 +45,7 @@ final class ConversationMapper {
                 UUID.fromString(conversation.getUserId()),
                 agentId,
                 conversation.getTitle(),
+                conversation.getSummary().orElse(null),  // Phase 10: persist summary
                 conversation.getCreatedAt(),
                 conversation.getUpdatedAt()
         );
