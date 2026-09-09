@@ -7,6 +7,7 @@ const navItems = [
   { to: "/admin/departments", label: "Departments" },
 { to: "/admin/documents", label: "Documents" },
   { to: "/admin/ai-settings", label: "AI Configuration" },
+  { to: "/admin/agents", label: "Agents" },
 ];
 
 export function AdminLayout() {

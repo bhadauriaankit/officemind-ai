@@ -1,4 +1,5 @@
- import { FormEvent, useEffect, useRef, useState } from "react";
+
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   useConversationList,
   useConversation,
@@ -7,19 +8,26 @@ import {
   extractErrorMessage,
   ChatMessage,
 } from "./useConversation";
+import { useAgents } from "@/features/agents/useAgents";
 
 export function ChatPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations } = useConversationList();
   const { data: activeConversation } = useConversation(activeId);
+  const { data: agents } = useAgents();
   const startConversation = useStartConversation();
   const sendMessage = useSendMessage();
 
   const isSending = startConversation.isPending || sendMessage.isPending;
   const activeError = startConversation.error || sendMessage.error;
+
+  const activeAgentName = activeConversation?.agentId
+    ? agents?.find((a) => a.id === activeConversation.agentId)?.name
+    : null;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -41,12 +49,18 @@ export function ChatPage() {
     setInput("");
 
     if (!activeId) {
-      startConversation.mutate(message, {
-        onSuccess: (conversation) => setActiveId(conversation.id),
-      });
+      startConversation.mutate(
+        { message, agentId: selectedAgentId || null },
+        { onSuccess: (conversation) => setActiveId(conversation.id) }
+      );
     } else {
       sendMessage.mutate({ conversationId: activeId, message });
     }
+  }
+
+  function startNewChat() {
+    setActiveId(null);
+    setSelectedAgentId("");
   }
 
   return (
@@ -54,7 +68,7 @@ export function ChatPage() {
       {/* Sidebar: conversation list */}
       <aside className="w-64 border-r border-slate-200 bg-white p-4">
         <button
-          onClick={() => setActiveId(null)}
+          onClick={startNewChat}
           className="mb-4 w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
         >
           + New chat
@@ -80,12 +94,36 @@ export function ChatPage() {
       <div className="flex flex-1 flex-col">
         <header className="border-b border-slate-200 bg-white px-6 py-4">
           <h1 className="text-lg font-bold text-slate-900">OfficeMind AI Assistant</h1>
+          {activeAgentName && (
+            <p className="mt-0.5 text-xs font-medium text-slate-500">Using {activeAgentName}</p>
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {!activeConversation && (
-            <div className="flex h-full items-center justify-center text-slate-400">
-              Ask me anything to get started.
+            <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center gap-4 text-slate-400">
+              <p>Ask me anything to get started.</p>
+              {agents && agents.length > 0 && (
+                <div className="w-full max-w-sm">
+                  <label className="mb-1 block text-center text-xs font-medium text-slate-500">
+                    Talk to a specific agent (optional)
+                  </label>
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) => setSelectedAgentId(e.target.value)}
+                    className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    <option value="">General Assistant (default)</option>
+                    {agents
+                      .filter((a) => a.key !== "general")
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
           <div className="mx-auto max-w-2xl space-y-4">

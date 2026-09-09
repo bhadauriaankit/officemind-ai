@@ -11,6 +11,7 @@ export interface ChatMessage {
 
 export interface Conversation {
   id: string;
+  agentId: string | null;
   title: string;
   messages: ChatMessage[];
   createdAt: string;
@@ -86,10 +87,10 @@ export function useStartConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (message: string) => {
+    mutationFn: async ({ message, agentId }: { message: string; agentId?: string | null }) => {
       const { data } = await httpClient.post<Conversation>(
         "/conversations",
-        { message },
+        { message, agentId: agentId || null },
         { headers: authHeader(token) }
       );
       return data;
