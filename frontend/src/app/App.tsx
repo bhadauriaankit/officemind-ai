@@ -10,6 +10,7 @@ import { AdminAiSettings } from "@/features/admin/AdminAiSettings";
 import { AdminAgents } from "@/features/admin/AdminAgents";
 import { RequireAdmin } from "@/shared/auth/RequireAdmin";
 import { ChatPage } from "@/features/chat/ChatPage";
+import { SearchPage } from "@/features/search/SearchPage";
 
 function Home() {
   return (
@@ -23,9 +24,12 @@ function Home() {
         <PlatformHealthPanel />
         <Link to="/admin" className="block text-sm font-medium text-slate-600 hover:text-slate-900">
           Go to Admin Portal →
-        </Link>	
+        </Link>
         <Link to="/chat" className="block text-sm font-medium text-slate-600 hover:text-slate-900">
           Go to Chat →
+        </Link>
+        <Link to="/search" className="block text-sm font-medium text-slate-600 hover:text-slate-900">
+          Go to Search →
         </Link>
       </main>
     </div>
@@ -37,7 +41,8 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-	      <Route path="/chat" element={<ChatPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route
           path="/admin"
           element={

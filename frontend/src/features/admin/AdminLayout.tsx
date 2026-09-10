@@ -1,11 +1,12 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, Link } from "react-router-dom";
 import { useAuth } from "react-oidc-context";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 
 const navItems = [
   { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/departments", label: "Departments" },
-{ to: "/admin/documents", label: "Documents" },
+  { to: "/admin/documents", label: "Documents" },
   { to: "/admin/ai-settings", label: "AI Configuration" },
   { to: "/admin/agents", label: "Agents" },
 ];
@@ -20,7 +21,20 @@ export function AdminLayout() {
           <div>
             <h1 className="text-lg font-bold text-slate-900">OfficeMind AI — Admin</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/search"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100"
+            >
+              Search
+            </Link>
+            <Link
+              to="/chat"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100"
+            >
+              Chat
+            </Link>
+            <NotificationBell />
             <span className="text-sm text-slate-500">
               {auth.user?.profile.name as string}
             </span>

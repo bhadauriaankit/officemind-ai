@@ -1,3 +1,5 @@
+# Backend Deployment + Service (Phase 13: hardened)
+# Updated for all post-Phase-1 features: Qdrant, Kafka, Keycloak, Ollama, RAG
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,6 +14,10 @@ spec:
     metadata:
       labels:
         app: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
     spec:
       containers:
         - name: backend
@@ -23,6 +29,9 @@ spec:
               value: "docker"
             - name: SPRING_DATASOURCE_URL
               value: "jdbc:postgresql://postgres:5432/$(POSTGRES_DB)"
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef: { name: officemind-core-secrets, key: POSTGRES_DB }
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef: { name: officemind-core-secrets, key: POSTGRES_USER }
@@ -43,33 +52,37 @@ spec:
               valueFrom:
                 secretKeyRef: { name: officemind-core-secrets, key: MINIO_ROOT_PASSWORD }
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "kafka:9092"
+              value: "kafka:29092"
             - name: QDRANT_HOST
               value: "qdrant"
             - name: QDRANT_PORT
               value: "6334"
-            - name: POSTGRES_DB
-              valueFrom:
-                secretKeyRef: { name: officemind-core-secrets, key: POSTGRES_DB }
+            # Keycloak (Phase 2)
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+              value: "http://keycloak:8080/realms/officemind/protocol/openid-connect/certs"
+            # Ollama (Phase 5) - requires Ollama sidecar or dedicated service in k8s
+            - name: SPRING_AI_OLLAMA_BASE_URL
+              value: "http://ollama:11434"
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 5
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 20
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 500m
+              memory: 768Mi
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "2"
+              memory: 2Gi
 ---
 apiVersion: v1
 kind: Service

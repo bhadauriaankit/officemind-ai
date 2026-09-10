@@ -14,6 +14,8 @@ volumes:
   zookeeper_log:
   keycloak_data:
   ollama_data:
+  prometheus_data:
+  grafana_data:
 
 services:
 
@@ -240,3 +242,49 @@ services:
       - "3000:80"
     networks:
       - officemind-net
+
+  # ---------------------------------------------------------------------
+  # Prometheus - metrics scraper (Phase 12)
+  # Scrapes /actuator/prometheus from the backend every 15s.
+  # ---------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: officemind-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - officemind-net
+    depends_on:
+      - backend
+
+  # ---------------------------------------------------------------------
+  # Grafana - dashboards (Phase 12)
+  # Auto-provisions Prometheus datasource + OfficeMind overview dashboard.
+  # Default login: admin / admin (change on first login for real deployments)
+  # ---------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: officemind-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    networks:
+      - officemind-net
+    depends_on:
+      - prometheus

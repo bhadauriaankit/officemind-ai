@@ -1,3 +1,4 @@
+# Qdrant vector database (Phase 13: updated with persistent storage)
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -18,26 +19,26 @@ spec:
         - name: qdrant
           image: qdrant/qdrant:v1.10.1
           ports:
-            - containerPort: 6333
-            - containerPort: 6334
+            - containerPort: 6333  # HTTP REST
+            - containerPort: 6334  # gRPC
           volumeMounts:
-            - name: qdrant-data
+            - name: qdrant-storage
               mountPath: /qdrant/storage
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 200m
+              memory: 256Mi
             limits:
               cpu: "1"
-              memory: 2Gi
+              memory: 1Gi
   volumeClaimTemplates:
     - metadata:
-        name: qdrant-data
+        name: qdrant-storage
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 20Gi
+            storage: 5Gi
 ---
 apiVersion: v1
 kind: Service
@@ -45,6 +46,7 @@ metadata:
   name: qdrant
   namespace: officemind-ai
 spec:
+  clusterIP: None
   selector:
     app: qdrant
   ports:
@@ -54,4 +56,3 @@ spec:
     - name: grpc
       port: 6334
       targetPort: 6334
-  clusterIP: None
