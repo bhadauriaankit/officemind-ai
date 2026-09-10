@@ -4,17 +4,25 @@ import com.officemind.application.conversation.DeleteConversationUseCase;
 import com.officemind.application.conversation.GetConversationUseCase;
 import com.officemind.application.conversation.ListConversationsUseCase;
 import com.officemind.application.conversation.SendMessageUseCase;
+import com.officemind.application.user.IdentityClaims;
+import com.officemind.application.user.ProvisionUserOnLoginUseCase;
 import com.officemind.application.user.UserRepositoryPort;
 import com.officemind.api.user.PageResponse;
 import com.officemind.common.exception.ResourceNotFoundException;
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.shared.EntityId;
+import com.officemind.domain.user.RoleName;
+import com.officemind.domain.user.User;
+import com.officemind.infrastructure.security.KeycloakJwtAuthenticationConverter;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/conversations")
@@ -25,17 +33,20 @@ public class ConversationController {
     private final GetConversationUseCase getConversationUseCase;
     private final DeleteConversationUseCase deleteConversationUseCase;
     private final UserRepositoryPort userRepository;
+    private final ProvisionUserOnLoginUseCase provisionUserOnLoginUseCase;
 
     public ConversationController(SendMessageUseCase sendMessageUseCase,
                                    ListConversationsUseCase listConversationsUseCase,
                                    GetConversationUseCase getConversationUseCase,
                                    DeleteConversationUseCase deleteConversationUseCase,
-                                   UserRepositoryPort userRepository) {
+                                   UserRepositoryPort userRepository,
+                                   ProvisionUserOnLoginUseCase provisionUserOnLoginUseCase) {
         this.sendMessageUseCase = sendMessageUseCase;
         this.listConversationsUseCase = listConversationsUseCase;
         this.getConversationUseCase = getConversationUseCase;
         this.deleteConversationUseCase = deleteConversationUseCase;
         this.userRepository = userRepository;
+        this.provisionUserOnLoginUseCase = provisionUserOnLoginUseCase;
     }
 
     @PostMapping
@@ -100,6 +111,32 @@ public class ConversationController {
         String keycloakSubjectId = authentication.getToken().getSubject();
         return userRepository.findByKeycloakSubjectId(keycloakSubjectId)
                 .map(u -> u.getId().value().toString())
-                .orElseThrow(() -> new IllegalStateException("User not yet provisioned"));
+                .orElseGet(() -> {
+                    IdentityClaims claims = toIdentityClaims(authentication.getToken());
+                    User user = provisionUserOnLoginUseCase.execute(claims);
+                    return user.getId().value().toString();
+                });
+    }
+
+    private IdentityClaims toIdentityClaims(Jwt jwt) {
+        Set<RoleName> roles = KeycloakJwtAuthenticationConverter.extractRealmRoles(jwt).stream()
+                .map(this::toRoleNameSafely)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return new IdentityClaims(
+                jwt.getSubject(),
+                jwt.getClaimAsString("email"),
+                jwt.getClaimAsString("name"),
+                roles
+        );
+    }
+
+    private RoleName toRoleNameSafely(String role) {
+        try {
+            return RoleName.valueOf(role);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

@@ -138,7 +138,7 @@ export function useDeleteConversation() {
 function extractErrorMessage(err: unknown): string {
   const anyErr = err as any;
   const status = anyErr?.response?.status;
-  const backendMessage = anyErr?.response?.data?.message;
+  const backendMessage = anyErr?.response?.data?.detail || anyErr?.response?.data?.message;
   if (status === 401) return "Your session expired. Please refresh the page and sign in again.";
   if (backendMessage) return backendMessage;
   if (anyErr?.message === "Network Error") return "Couldn't reach the server. Check that the backend is running.";

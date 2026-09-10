@@ -9,6 +9,7 @@ import { AdminDocuments } from "@/features/admin/AdminDocuments";
 import { AdminAiSettings } from "@/features/admin/AdminAiSettings";
 import { AdminAgents } from "@/features/admin/AdminAgents";
 import { RequireAdmin } from "@/shared/auth/RequireAdmin";
+import { RequireAuth } from "@/shared/auth/RequireAuth";
 import { ChatPage } from "@/features/chat/ChatPage";
 import { SearchPage } from "@/features/search/SearchPage";
 
@@ -67,8 +68,22 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/search" element={<SearchPage />} />
+        <Route
+          path="/chat"
+          element={
+            <RequireAuth>
+              <ChatPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <RequireAuth>
+              <SearchPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/admin"
           element={
