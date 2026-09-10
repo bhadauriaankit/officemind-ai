@@ -24,17 +24,20 @@ public class DocumentController {
     private final ListDocumentsUseCase listDocumentsUseCase;
     private final DownloadDocumentUseCase downloadDocumentUseCase;
     private final DeleteDocumentUseCase deleteDocumentUseCase;
+    private final DocumentEventPublisherPort eventPublisher;
     private final UserRepositoryPort userRepository;
 
     public DocumentController(UploadDocumentUseCase uploadDocumentUseCase,
                                ListDocumentsUseCase listDocumentsUseCase,
                                DownloadDocumentUseCase downloadDocumentUseCase,
                                DeleteDocumentUseCase deleteDocumentUseCase,
+                               DocumentEventPublisherPort eventPublisher,
                                UserRepositoryPort userRepository) {
         this.uploadDocumentUseCase = uploadDocumentUseCase;
         this.listDocumentsUseCase = listDocumentsUseCase;
         this.downloadDocumentUseCase = downloadDocumentUseCase;
         this.deleteDocumentUseCase = deleteDocumentUseCase;
+        this.eventPublisher = eventPublisher;
         this.userRepository = userRepository;
     }
 
@@ -78,6 +81,12 @@ public class DocumentController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + result.document().getFileName() + "\"")
                 .body(new InputStreamResource(result.content()));
+    }
+
+    @PostMapping("/{id}/reindex")
+    public ResponseEntity<Void> reindex(@PathVariable UUID id) {
+        eventPublisher.publishDocumentUploaded(EntityId.of(id));
+        return ResponseEntity.accepted().build();
     }
 
     @DeleteMapping("/{id}")

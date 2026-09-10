@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "react-oidc-context";
 import { httpClient } from "@/shared/api/httpClient";
 
 export interface Notification {
@@ -10,28 +11,41 @@ export interface Notification {
   createdAt: string;
 }
 
-async function fetchNotifications(unreadOnly: boolean): Promise<Notification[]> {
-  const { data } = await httpClient.get<Notification[]>(`/notifications?unreadOnly=${unreadOnly}`);
-  return data;
-}
-
-async function markRead(id: string): Promise<void> {
-  await httpClient.patch(`/notifications/${id}/read`);
+function authHeader(token?: string) {
+  return { Authorization: `Bearer ${token}` };
 }
 
 export function useNotifications() {
+  const auth = useAuth();
+  const token = auth.user?.access_token;
+
   return useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => fetchNotifications(false),
-    refetchInterval: 15_000, // poll every 15s for new notifications
+    queryKey: ["notifications", token],
+    queryFn: async () => {
+      const { data } = await httpClient.get<Notification[]>("/notifications?unreadOnly=false", {
+        headers: authHeader(token),
+      });
+      return data;
+    },
+    enabled: !!token,
+    refetchInterval: 15_000,
     staleTime: 10_000,
   });
 }
 
 export function useUnreadCount() {
+  const auth = useAuth();
+  const token = auth.user?.access_token;
+
   return useQuery({
-    queryKey: ["notifications", "unread"],
-    queryFn: () => fetchNotifications(true),
+    queryKey: ["notifications", "unread", token],
+    queryFn: async () => {
+      const { data } = await httpClient.get<Notification[]>("/notifications?unreadOnly=true", {
+        headers: authHeader(token),
+      });
+      return data;
+    },
+    enabled: !!token,
     refetchInterval: 15_000,
     staleTime: 10_000,
     select: (data) => data.length,
@@ -39,9 +53,16 @@ export function useUnreadCount() {
 }
 
 export function useMarkRead() {
+  const auth = useAuth();
+  const token = auth.user?.access_token;
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: markRead,
+    mutationFn: async (id: string) => {
+      await httpClient.patch(`/notifications/${id}/read`, {}, {
+        headers: authHeader(token),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },

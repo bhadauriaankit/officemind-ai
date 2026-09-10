@@ -6,6 +6,7 @@ import com.officemind.application.conversation.ListConversationsUseCase;
 import com.officemind.application.conversation.SendMessageUseCase;
 import com.officemind.application.user.UserRepositoryPort;
 import com.officemind.api.user.PageResponse;
+import com.officemind.common.exception.ResourceNotFoundException;
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.shared.EntityId;
 import jakarta.validation.Valid;
@@ -50,14 +51,25 @@ public class ConversationController {
 
     @PostMapping("/{id}/messages")
     public ConversationResponse continueConversation(@PathVariable UUID id,
-                                                       @Valid @RequestBody SendMessageRequest request) {
+                                                       @Valid @RequestBody SendMessageRequest request,
+                                                       JwtAuthenticationToken authentication) {
+        String internalUserId = resolveInternalUserId(authentication);
+        Conversation existing = getConversationUseCase.execute(EntityId.of(id));
+        if (!existing.getUserId().equals(internalUserId)) {
+            throw new ResourceNotFoundException("Conversation", id);
+        }
         Conversation conversation = sendMessageUseCase.continueConversation(EntityId.of(id), request.message());
         return ConversationResponse.from(conversation);
     }
 
     @GetMapping("/{id}")
-    public ConversationResponse get(@PathVariable UUID id) {
-        return ConversationResponse.from(getConversationUseCase.execute(EntityId.of(id)));
+    public ConversationResponse get(@PathVariable UUID id, JwtAuthenticationToken authentication) {
+        String internalUserId = resolveInternalUserId(authentication);
+        Conversation existing = getConversationUseCase.execute(EntityId.of(id));
+        if (!existing.getUserId().equals(internalUserId)) {
+            throw new ResourceNotFoundException("Conversation", id);
+        }
+        return ConversationResponse.from(existing);
     }
 
     @GetMapping
@@ -74,7 +86,12 @@ public class ConversationController {
 
     /** DELETE /api/v1/conversations/{id} — removes a conversation from history. */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id, JwtAuthenticationToken authentication) {
+        String internalUserId = resolveInternalUserId(authentication);
+        Conversation existing = getConversationUseCase.execute(EntityId.of(id));
+        if (!existing.getUserId().equals(internalUserId)) {
+            throw new ResourceNotFoundException("Conversation", id);
+        }
         deleteConversationUseCase.execute(EntityId.of(id));
         return ResponseEntity.noContent().build();
     }

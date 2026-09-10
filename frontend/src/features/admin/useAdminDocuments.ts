@@ -96,3 +96,18 @@ export function useDownloadDocument() {
     window.URL.revokeObjectURL(url);
   };
 }
+
+export function useReindexDocument() {
+  const auth = useAuth();
+  const token = auth.user?.access_token;
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await httpClient.post(`/documents/${id}/reindex`, {}, { headers: authHeader(token) });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "documents"] });
+    },
+  });
+}
