@@ -1,5 +1,6 @@
 package com.officemind.api.conversation;
 
+import com.officemind.application.conversation.DeleteConversationUseCase;
 import com.officemind.application.conversation.GetConversationUseCase;
 import com.officemind.application.conversation.ListConversationsUseCase;
 import com.officemind.application.conversation.SendMessageUseCase;
@@ -8,6 +9,7 @@ import com.officemind.api.user.PageResponse;
 import com.officemind.domain.conversation.Conversation;
 import com.officemind.domain.shared.EntityId;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,15 +22,18 @@ public class ConversationController {
     private final SendMessageUseCase sendMessageUseCase;
     private final ListConversationsUseCase listConversationsUseCase;
     private final GetConversationUseCase getConversationUseCase;
+    private final DeleteConversationUseCase deleteConversationUseCase;
     private final UserRepositoryPort userRepository;
 
     public ConversationController(SendMessageUseCase sendMessageUseCase,
                                    ListConversationsUseCase listConversationsUseCase,
                                    GetConversationUseCase getConversationUseCase,
+                                   DeleteConversationUseCase deleteConversationUseCase,
                                    UserRepositoryPort userRepository) {
         this.sendMessageUseCase = sendMessageUseCase;
         this.listConversationsUseCase = listConversationsUseCase;
         this.getConversationUseCase = getConversationUseCase;
+        this.deleteConversationUseCase = deleteConversationUseCase;
         this.userRepository = userRepository;
     }
 
@@ -65,6 +70,13 @@ public class ConversationController {
                 listConversationsUseCase.execute(internalUserId, page, size),
                 ConversationResponse::from
         );
+    }
+
+    /** DELETE /api/v1/conversations/{id} — removes a conversation from history. */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+        deleteConversationUseCase.execute(EntityId.of(id));
+        return ResponseEntity.noContent().build();
     }
 
     private String resolveInternalUserId(JwtAuthenticationToken authentication) {

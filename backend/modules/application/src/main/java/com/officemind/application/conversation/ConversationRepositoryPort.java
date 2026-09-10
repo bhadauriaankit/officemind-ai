@@ -13,4 +13,7 @@ public interface ConversationRepositoryPort {
     Optional<Conversation> findById(EntityId id);
 
     PageResult<Conversation> findAllByUserId(String userId, int page, int size);
+
+    /** Permanently removes a conversation and all its messages. */
+    void deleteById(EntityId id);
 }

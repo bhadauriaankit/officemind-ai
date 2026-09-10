@@ -28,7 +28,6 @@ function authHeader(token?: string) {
 export function useAdminUsers(page = 0, size = 20) {
   const auth = useAuth();
   const token = auth.user?.access_token;
-
   return useQuery({
     queryKey: ["admin", "users", page, size, token],
     queryFn: async () => {
@@ -46,19 +45,14 @@ export function useSetUserStatus() {
   const auth = useAuth();
   const token = auth.user?.access_token;
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ userId, action }: { userId: string; action: "disable" | "reactivate" }) => {
       const { data } = await httpClient.post<AdminUser>(
-        `/users/${userId}/${action}`,
-        {},
-        { headers: authHeader(token) }
+        `/users/${userId}/${action}`, {}, { headers: authHeader(token) }
       );
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
   });
 }
 
@@ -66,18 +60,13 @@ export function useUpdateUserRoles() {
   const auth = useAuth();
   const token = auth.user?.access_token;
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ userId, roles }: { userId: string; roles: string[] }) => {
       const { data } = await httpClient.patch<AdminUser>(
-        `/users/${userId}/roles`,
-        { roles },
-        { headers: authHeader(token) }
+        `/users/${userId}/roles`, { roles }, { headers: authHeader(token) }
       );
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
   });
 }

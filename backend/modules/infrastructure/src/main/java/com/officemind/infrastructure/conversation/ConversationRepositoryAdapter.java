@@ -42,4 +42,9 @@ public class ConversationRepositoryAdapter implements ConversationRepositoryPort
                 result.getTotalElements()
         );
     }
+
+    @Override
+    public void deleteById(EntityId id) {
+        jpaRepository.deleteById(id.value());
+    }
 }
